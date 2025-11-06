@@ -16,6 +16,11 @@ const app = express();
 const port = 3000;
 const excelFolder = path.join(__dirname, 'excel');
 
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
+
 if (!fs.existsSync(excelFolder)) {
   fs.mkdirSync(excelFolder, { recursive: true });
 }
@@ -23,7 +28,7 @@ if (!fs.existsSync(excelFolder)) {
 let accessToken = null;
 
 app.get('/', (req, res) => {
-  res.send('<a href="/login">Login with Spotify</a>');
+  res.render('login', { title: "login" });
 });
 
 app.get('/login', (req, res) => {
@@ -53,10 +58,10 @@ app.get('/callback', async (req, res) => {
     );
 
     accessToken = response.data.access_token;
-    res.send('Authentication successful! Now go to <a href="/playlists">/playlists</a>');
+    res.render('playlists-link', { title: "playlists-link" });
   } catch (error) {
     console.error('Error logging in:', error.response?.data || error.message);
-    res.status(500).send('Error logging in');
+    res.status(500).render('error', { title:'err' });
   }
 });
 
@@ -70,16 +75,11 @@ app.get('/playlists', async (req, res) => {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
 
-    let html = '<h1>Your Playlists</h1><ul>';
-    response.data.items.forEach(playlist => {
-      html += `<li><a href="/download/${playlist.id}">${playlist.name}</a></li>`;
-    });
-    html += '</ul>';
-
-    res.send(html);
+    const playlists = response.data.items
+    res.render("playlists", { title: "playlist-ul", playlists })
   } catch (error) {
     console.error('Error fetching playlists:', error.response?.data || error.message);
-    res.status(500).send('Error retrieving playlists');
+    res.status(500).render('error', { title:'err' });
   }
 });
 
@@ -107,7 +107,8 @@ app.get('/download/:playlistId', async (req, res) => {
     worksheet.columns = [
       { header: 'Track Name', key: 'track' },
       { header: 'Artist', key: 'artist' },
-      { header: 'Album', key: 'album' }
+      { header: 'Album', key: 'album' },
+      { header: 'URL', key: 'url' }
     ];
 
     allTracks.forEach(item => {
@@ -115,7 +116,8 @@ app.get('/download/:playlistId', async (req, res) => {
         worksheet.addRow({
           track: item.track.name,
           artist: item.track.artists.map(a => a.name).join(', '),
-          album: item.track.album?.name || `${item.track.name} Song`
+          album: item.track.album?.name || `${item.track.name} Song`,
+          url: item.track.external_urls?.spotify || ''
         });
       }
     });
@@ -130,7 +132,10 @@ app.get('/download/:playlistId', async (req, res) => {
   }
 });
 
+app.use((req, res) => {
+  res.render('error', { title:'err' });
+})
+
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
-  // open(`http://localhost:${port}`);
 });

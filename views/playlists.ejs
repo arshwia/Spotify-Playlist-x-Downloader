@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<%- include('./partials/header') %>
+
+<body style="background-color: black;">
+	
+	<h1 style="color: #3be477;">Hello <%= playlists[0].owner.display_name %></h1>
+	<ul>
+    	<% playlists.forEach(playlist => { %>
+      	<li>
+			<a style="font-size: 24px;" href="/download/<%= playlist.id %>"><%= playlist.name %></a>
+		</li>
+    	<% }) %>
+	</ul>
+
+
+
+	<%- include('./partials/footer') %>
+</body>
+</html>
