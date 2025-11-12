@@ -112,11 +112,19 @@ app.get('/download/:playlistId', async (req, res) => {
     ];
 
     allTracks.forEach(item => {
+      function albumName(){
+        if (item.track.album.total_tracks != 1) {
+          return `${item.track.name} Song`;
+        } else {
+           return item.track.album.name
+        }
+      }
+      
       if (item.track) {
         worksheet.addRow({
           track: item.track.name,
           artist: item.track.artists.map(a => a.name).join(', '),
-          album: item.track.album?.name || `${item.track.name} Song`,
+          album: albumName(),
           url: item.track.external_urls?.spotify || ''
         });
       }
